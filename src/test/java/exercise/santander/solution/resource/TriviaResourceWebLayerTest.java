@@ -1,6 +1,6 @@
 package exercise.santander.solution.resource;
 
-import exercise.santander.solution.domain.CreateQuestionResponse;
+import exercise.santander.solution.domain.CreateTriviaResponse;
 import exercise.santander.solution.domain.TriviaResponseStatus;
 import exercise.santander.solution.repository.TriviaRepository;
 import exercise.santander.solution.service.TriviaService;
@@ -14,13 +14,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = TriviaResource.class)
 class TriviaResourceWebLayerTest {
@@ -37,7 +35,7 @@ class TriviaResourceWebLayerTest {
     @Test
     void createTriviaQuestion() throws Exception {
         // Mock the service call
-        given(triviaService.createTriviaQuestion()).willReturn(Optional.of(List.of(new CreateQuestionResponse(1,List.of()))));
+        given(triviaService.createTriviaQuestion()).willReturn(Optional.of(new CreateTriviaResponse(1,List.of())));
 
         // Perform the request and assert the response
         mockMvc.perform(post("/trivia/start")
@@ -48,38 +46,54 @@ class TriviaResourceWebLayerTest {
     }
 
     @Test
-    void replyAnswer() throws Exception {
-        // Mock the service call for validation
-        given(triviaService.verifyAnswer(any(), eq("answer")))
-                .willReturn(TriviaResponseStatus.RIGHT);
+    void replyAnswerIsCorrect() throws Exception {
+        given(triviaService.verifyAnswer(any(), any()))
+                .willReturn(Optional.of(TriviaResponseStatus.RIGHT));
 
-
-        String jsonPayload = "{\"answer\":\"answer\"}";
-
-
-        // Perform the request and assert the response
         mockMvc.perform(put("/trivia/reply/1")
-                        .content(jsonPayload)
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content("{\"answer\":\"answer\"}"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("right!"));
+                .andExpect(content().string("{\"result\":\"right!\"}"));
     }
 
     @Test
-    void replyAnswerSaysWrong() throws Exception {
-        // Mock the service call for validation
-        given(triviaService.verifyAnswer(any(), eq("wrong")))
-                .willReturn(TriviaResponseStatus.WRONG);
+    void replyAnswerIsWrong() throws Exception {
+        given(triviaService.verifyAnswer(any(), any()))
+                .willReturn(Optional.of(TriviaResponseStatus.WRONG));
 
-
-        String jsonPayload = "{\"answer\":\"wrong\"}";
-
-
-        // Perform the request and assert the response
         mockMvc.perform(put("/trivia/reply/1")
-                        .content(jsonPayload)
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .content("{\"answer\":\"answer\"}")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().is4xxClientError())
-                .andExpect(content().string("wrong!"));
+                .andExpect(content().string("{\"result\":\"wrong!\"}"));
+    }
+
+    @Test
+    void replyAnswerSaysMaximumAttemptsReached() throws Exception {
+        given(triviaService.verifyAnswer(any(), any()))
+                .willReturn(Optional.of(TriviaResponseStatus.MAX_ATTEMPTS_REACHED));
+
+        mockMvc.perform(put("/trivia/reply/1")
+                        .content("{\"answer\":\"wrong\"}")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().is4xxClientError())
+                .andExpect(content().string("{\"result\":\"Max attempts reached!\"}"));
+    }
+
+    @Test
+    void replyAnswerNoSuchQuestion() throws Exception {
+        given(triviaService.verifyAnswer(any(), any()))
+                .willReturn(Optional.of(TriviaResponseStatus.NO_SUCH_QUESTION));
+
+        mockMvc.perform(put("/trivia/reply/1")
+                        .content("{\"answer\":\"wrong\"}")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().is4xxClientError())
+                .andExpect(content().string("{\"result\":\"No such question!\"}"));
     }
 }

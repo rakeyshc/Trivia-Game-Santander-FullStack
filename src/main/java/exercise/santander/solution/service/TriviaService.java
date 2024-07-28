@@ -2,9 +2,9 @@ package exercise.santander.solution.service;
 
 
 import exercise.santander.solution.config.TriviaQuestionClient;
-import exercise.santander.solution.domain.TriviaQuestion;
-import exercise.santander.solution.domain.TriviaQuestionResponse;
-import exercise.santander.solution.domain.CreateQuestionResponse;
+import exercise.santander.solution.domain.ClientQuestion;
+import exercise.santander.solution.domain.ClientQuestionResponse;
+import exercise.santander.solution.domain.CreateTriviaResponse;
 import exercise.santander.solution.domain.TriviaResponseStatus;
 import exercise.santander.solution.entity.Trivia;
 import exercise.santander.solution.repository.TriviaRepository;
@@ -25,38 +25,35 @@ public class TriviaService {
 
     private final TriviaQuestionClient triviaQuestionClient;
 
-    public Optional<List<CreateQuestionResponse>> createTriviaQuestion() {
-
-        //Hardcoded to amount = 1 but can be configured...
-        TriviaQuestionResponse triviaQuestionResponse = triviaQuestionClient.getTriviaQuestion(1);
+    public Optional<CreateTriviaResponse> createTriviaQuestion() {
+        ClientQuestionResponse triviaQuestionResponse = triviaQuestionClient.getTriviaQuestion(1);
         if (triviaQuestionResponse.response_code() == 0 && !triviaQuestionResponse.results().isEmpty()) {
-            List<CreateQuestionResponse> responseItems = triviaQuestionResponse.results().stream()
+            return triviaQuestionResponse.results().stream()
                     .map(this::combineAnswers)
                     .map(this::saveTriviaQuestion)
-                    .collect(Collectors.toList());
-
-            return Optional.ofNullable(responseItems);
+                    .findFirst();
         }
         return Optional.empty();
     }
 
-    public TriviaResponseStatus verifyAnswer(String triviaId, String answer) {
-        Optional<Trivia> recordExists = triviaRepository.findById(Integer.parseInt(triviaId));
-        return recordExists.map(record -> validate(record,answer)).orElse(TriviaResponseStatus.NO_SUCH_QUESTION);
+    public Optional<TriviaResponseStatus> verifyAnswer(String triviaId, String answer) {
+        return Optional.ofNullable(triviaRepository.findById(Integer.parseInt(triviaId))
+                .map(record -> validate(record,answer))
+                .orElse(TriviaResponseStatus.NO_SUCH_QUESTION));
     }
 
-    private CreateQuestionResponse saveTriviaQuestion(CombinedResult combinedResult){
+    private CreateTriviaResponse saveTriviaQuestion(CombinedResult combinedResult){
        Trivia persistedRecord =  triviaRepository.save(
                 Trivia.builder()
                         .question(combinedResult.result().question())
                         .answer_attempts(0)
                         .correct_answer(combinedResult.result().correct_answer())
                         .build());
-       return new CreateQuestionResponse(persistedRecord.getTriviaId(), combinedResult.combinedAnswers);
+       return new CreateTriviaResponse(persistedRecord.getTriviaId(), combinedResult.combinedAnswers);
 
     }
 
-    private CombinedResult combineAnswers(TriviaQuestion result) {
+    private CombinedResult combineAnswers(ClientQuestion result) {
         List<String> combinedAnswers = Stream.of(
                         result.incorrect_answers(),
                         Arrays.asList(result.correct_answer()))
@@ -78,7 +75,7 @@ public class TriviaService {
         }
     }
 
-    private record CombinedResult(TriviaQuestion result, List<String> combinedAnswers) {
+    private record CombinedResult(ClientQuestion result, List<String> combinedAnswers) {
     }
 
 }

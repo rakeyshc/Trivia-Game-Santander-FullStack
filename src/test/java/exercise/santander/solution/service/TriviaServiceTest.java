@@ -1,9 +1,9 @@
 package exercise.santander.solution.service;
 
 import exercise.santander.solution.config.TriviaQuestionClient;
-import exercise.santander.solution.domain.CreateQuestionResponse;
-import exercise.santander.solution.domain.TriviaQuestion;
-import exercise.santander.solution.domain.TriviaQuestionResponse;
+import exercise.santander.solution.domain.CreateTriviaResponse;
+import exercise.santander.solution.domain.ClientQuestion;
+import exercise.santander.solution.domain.ClientQuestionResponse;
 import exercise.santander.solution.domain.TriviaResponseStatus;
 import exercise.santander.solution.entity.Trivia;
 import exercise.santander.solution.repository.TriviaRepository;
@@ -24,7 +24,6 @@ class TriviaServiceTest {
 
     @Mock
     private TriviaRepository triviaRepository;
-
     @Mock
     private TriviaQuestionClient triviaQuestionClient;
 
@@ -39,17 +38,18 @@ class TriviaServiceTest {
     @Test
     void createTriviaQuestion() {
         //Arrange
-        TriviaQuestion triviaQuestion = new TriviaQuestion("Sports", "multiple", "medium", "Which soccer team won the Copa America 2015 Championship?", "Chile", List.of("Argentina", "Brazil", "Paraguay"));
-        TriviaQuestionResponse triviaQuestionResponse = new TriviaQuestionResponse(0, List.of(triviaQuestion));
+        ClientQuestion triviaQuestion = new ClientQuestion("Sports",
+                "multiple", "medium", "Which soccer team won the Copa America 2015 Championship?",
+                "Chile", List.of("Argentina", "Brazil", "Paraguay"));
+        ClientQuestionResponse triviaQuestionResponse = new ClientQuestionResponse(0, List.of(triviaQuestion));
         when(triviaQuestionClient.getTriviaQuestion(1)).thenReturn(triviaQuestionResponse);
         when(triviaRepository.save(any(Trivia.class))).thenReturn(createTrivia());
 
         // Act
-        Optional<List<CreateQuestionResponse>> responseEntity = service.createTriviaQuestion();
+        Optional<CreateTriviaResponse> responseEntity = service.createTriviaQuestion();
 
         // Assert
-        assertEquals(0, responseEntity.get().stream().findFirst().get().triviaId());
-        assertEquals(4, responseEntity.get().stream().findFirst().get().possibleAnswers().size());
+        assertEquals(0, responseEntity.get().triviaId());
         verify(triviaRepository, times(1)).save(any(Trivia.class));
 
     }
@@ -57,11 +57,11 @@ class TriviaServiceTest {
     @Test
     void createTriviaQuestion_Failure() {
         // Arrange
-        TriviaQuestionResponse triviaQuestionResponse = new TriviaQuestionResponse(1, List.of());
+        ClientQuestionResponse triviaQuestionResponse = new ClientQuestionResponse(1, List.of());
         when(triviaQuestionClient.getTriviaQuestion(1)).thenReturn(triviaQuestionResponse);
 
         // Act
-        Optional<List<CreateQuestionResponse>> response = service.createTriviaQuestion();
+        Optional<CreateTriviaResponse> response = service.createTriviaQuestion();
 
         // Assert
         assertFalse(response.isPresent());
@@ -75,10 +75,10 @@ class TriviaServiceTest {
         when(triviaRepository.findById(0)).thenReturn(Optional.of(trivia));
 
         // Act
-        TriviaResponseStatus responseStatus = service.verifyAnswer("0", "Chile");
+        Optional<TriviaResponseStatus> responseStatus = service.verifyAnswer("0", "Chile");
 
         // Assert
-        assertEquals(TriviaResponseStatus.RIGHT, responseStatus);
+        assertEquals(TriviaResponseStatus.RIGHT, responseStatus.get());
         verify(triviaRepository, times(1)).delete(trivia);
     }
 
@@ -89,10 +89,10 @@ class TriviaServiceTest {
         when(triviaRepository.findById(0)).thenReturn(Optional.of(trivia));
 
         // Act
-        TriviaResponseStatus responseStatus = service.verifyAnswer("0", "Argentina");
+        Optional<TriviaResponseStatus> responseStatus = service.verifyAnswer("0", "Argentina");
 
         // Assert
-        assertEquals(TriviaResponseStatus.WRONG, responseStatus);
+        assertEquals(TriviaResponseStatus.WRONG, responseStatus.get());
         verify(triviaRepository, times(1)).save(any(Trivia.class));
     }
 
@@ -104,10 +104,10 @@ class TriviaServiceTest {
         when(triviaRepository.findById(0)).thenReturn(Optional.of(trivia));
 
         // Act
-        TriviaResponseStatus responseStatus = service.verifyAnswer("0", "Argentina");
+        Optional<TriviaResponseStatus> responseStatus = service.verifyAnswer("0", "Argentina");
 
         // Assert
-        assertEquals(TriviaResponseStatus.MAX_ATTEMPTS_REACHED, responseStatus);
+        assertEquals(TriviaResponseStatus.MAX_ATTEMPTS_REACHED, responseStatus.get());
         verify(triviaRepository, never()).save(any(Trivia.class));
     }
 
@@ -117,10 +117,10 @@ class TriviaServiceTest {
         when(triviaRepository.findById(0)).thenReturn(Optional.empty());
 
         // Act
-        TriviaResponseStatus responseStatus = service.verifyAnswer("0", "Chile");
+        Optional<TriviaResponseStatus> responseStatus = service.verifyAnswer("0", "Chile");
 
         // Assert
-        assertEquals(TriviaResponseStatus.NO_SUCH_QUESTION, responseStatus);
+        assertEquals(TriviaResponseStatus.NO_SUCH_QUESTION, responseStatus.get());
     }
 
     @Test

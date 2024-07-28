@@ -2,7 +2,7 @@ package exercise.santander.solution.domain;
 
 import java.util.List;
 
-public record TriviaQuestion(
+public record ClientQuestion(
         String category,
         String type,
         String difficulty,

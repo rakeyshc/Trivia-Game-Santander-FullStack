@@ -1,6 +1,6 @@
 package exercise.santander.solution.config;
 
-import exercise.santander.solution.domain.TriviaQuestionResponse;
+import exercise.santander.solution.domain.ClientQuestionResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -9,5 +9,5 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface TriviaQuestionClient {
 
     @GetMapping
-    TriviaQuestionResponse getTriviaQuestion(@RequestParam("amount") int amount);
+    ClientQuestionResponse getTriviaQuestion(@RequestParam("amount") int amount);
 }
