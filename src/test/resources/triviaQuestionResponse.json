@@ -1,0 +1,11 @@
+{
+  "response_code": 0,
+  "results": [{
+    "category": "Sports",
+    "type": "multiple",
+    "difficulty": "medium",
+    "question": "Which soccer team won the Copa America 2015 Championship?",
+    "correct_answer": "Chile",
+    "incorrect_answers": ["Argentina", "Brazil", "Paraguay"]
+  }]
+}
