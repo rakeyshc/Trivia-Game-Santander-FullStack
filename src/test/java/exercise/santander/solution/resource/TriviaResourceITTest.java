@@ -37,16 +37,22 @@ public class TriviaResourceITTest {
     @Test
     public void createQuestionShouldWork(){
 
-        ResponseEntity<CreateTriviaResponse> response = template.postForEntity(base.toString()+"/start", null, CreateTriviaResponse.class);
+        //Arrange
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        HttpEntity<String> entity = new HttpEntity<>(null, headers);
+
+        ResponseEntity<CreateTriviaResponse> response = template.postForEntity(base.toString()+"/start", entity, CreateTriviaResponse.class);
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody().triviaId()).isEqualTo(1);
 
     }
 
     @Test
-    @Sql(statements = "INSERT INTO TRIVIA(trivia_id,answer_attempts,correct_answer,question) VALUES(1,1,'answer','dummy question')", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(statements = "INSERT INTO TRIVIA(trivia_id,answer_attempts,correct_answer,question) " +
+            "VALUES(1,1,'answer','dummy question')", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
     public void replyAnswerShouldReturnCorrect() throws Exception {
-
         //Arrange
         JSONObject requestObject = new JSONObject();
         requestObject.put("answer","answer");
@@ -56,7 +62,8 @@ public class TriviaResourceITTest {
         HttpEntity<String> entity = new HttpEntity<>(requestObject.toString(), headers);
 
         //Act
-        ResponseEntity<TriviaResponse> response = template.exchange(base.toString()+"/reply/1", HttpMethod.PUT, entity, TriviaResponse.class);
+        ResponseEntity<TriviaResponse> response = template.exchange(base.toString()+"/reply/1",
+                HttpMethod.PUT, entity, TriviaResponse.class);
 
         //Assert
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
@@ -78,7 +85,8 @@ public class TriviaResourceITTest {
         HttpEntity<String> entity = new HttpEntity<>(requestObject.toString(), headers);
 
         //Act
-        ResponseEntity<TriviaResponse> response = template.exchange(base.toString()+"/reply/2", HttpMethod.PUT, entity, TriviaResponse.class);
+        ResponseEntity<TriviaResponse> response = template.exchange(base.toString()+"/reply/2",
+                HttpMethod.PUT, entity, TriviaResponse.class);
 
         //Assert
         assertThat(response.getStatusCode().is4xxClientError()).isTrue();
